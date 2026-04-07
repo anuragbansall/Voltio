@@ -1,16 +1,34 @@
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import DeviceImage from "./DeviceImage";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function DeviceInfoCard({ device }) {
   return (
     <TouchableOpacity style={style.card}>
-      <DeviceImage type={device.type} isCharging={true} size={80} />
+      <View style={style.imageWrap}>
+        <DeviceImage type={device.type} isCharging={true} size={76} />
+      </View>
 
-      <View>
-        <Text style={style.name}>{device.name}</Text>
-        {device.isCharging && <Text style={style.charging}>Charging</Text>}
+      <View style={style.copy}>
+        <View style={style.nameRow}>
+          <Text style={style.name}>{device.name}</Text>
+          <View style={style.batteryPill}>
+            <Ionicons name="battery-half-outline" size={14} color="#7EF0D6" />
+            <Text style={style.batteryLabel}>{device.batteryLevel}%</Text>
+          </View>
+        </View>
+
+        {device.isCharging ? (
+          <View style={style.chargingPill}>
+            <Ionicons name="flash-outline" size={14} color="#071014" />
+            <Text style={style.charging}>Charging</Text>
+          </View>
+        ) : (
+          <Text style={style.idle}>On battery</Text>
+        )}
+
         <Text style={style.lastSeen}>
-          Last seen:{" "}
+          Last seen {" "}
           {new Date(parseInt(device.lastSeen)).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -18,46 +36,81 @@ export default function DeviceInfoCard({ device }) {
           })}
         </Text>
       </View>
-
-      <View style={style.batteryContainer}>
-        <Text style={style.batteryLevel}>{device.batteryLevel}%</Text>
-      </View>
     </TouchableOpacity>
   );
 }
 
 const style = StyleSheet.create({
   card: {
-    display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 14,
     padding: 16,
-    backgroundColor: "#1E1F23",
-    borderRadius: 8,
-    marginTop: 16,
+    backgroundColor: "rgba(17,20,26,0.92)",
+    borderRadius: 24,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+  },
+  imageWrap: {
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  copy: {
+    flex: 1,
+    gap: 8,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
   name: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#fff",
+    flex: 1,
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#F4F7FA",
+  },
+  batteryPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(126,240,214,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(126,240,214,0.14)",
+  },
+  batteryLabel: {
+    color: "#7EF0D6",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  chargingPill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#7EF0D6",
   },
   charging: {
-    fontSize: 16,
-    color: "#dadada",
+    fontSize: 12,
+    color: "#071014",
+    fontWeight: "800",
+  },
+  idle: {
+    alignSelf: "flex-start",
+    fontSize: 12,
+    color: "#97A0AD",
+    fontWeight: "700",
   },
   lastSeen: {
-    fontSize: 14,
-    color: "#888",
-  },
-  batteryContainer: {
-    marginTop: 8,
-    backgroundColor: "#242528",
-    padding: 8,
-    borderRadius: 4,
-  },
-  batteryLevel: {
-    fontSize: 14,
-    color: "#fff",
+    fontSize: 13,
+    color: "#85909D",
   },
 });

@@ -23,6 +23,7 @@ export default function DeviceImage({
 
   return (
     <View style={[styles.imageContainer, { width: size, height: size }]}>
+      <View style={styles.highlight} />
       <Image source={imageSource} style={[styles.image]} />
     </View>
   );
@@ -30,11 +31,22 @@ export default function DeviceImage({
 
 const styles = StyleSheet.create({
   imageContainer: {
-    display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#242528",
-    borderRadius: 8,
+    backgroundColor: "#11141A",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+    overflow: "hidden",
+  },
+  highlight: {
+    position: "absolute",
+    top: -18,
+    left: -10,
+    width: 36,
+    height: 36,
+    borderRadius: 36,
+    backgroundColor: "rgba(126,240,214,0.16)",
   },
   image: {
     objectFit: "contain",
