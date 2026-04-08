@@ -4,43 +4,72 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 const BatteryContext = createContext();
 
 export const BatteryProvider = ({ children }) => {
-  const [batteryLevel, setBatteryLevel] = useState(0);
+  const [batteryLevel, setBatteryLevel] = useState(null);
   const [isCharging, setIsCharging] = useState(false);
   const [isLoadingBattery, setIsLoadingBattery] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
 
-    const initBatteryState = async () => {
+    const updateState = (state) => {
+      if (!isMounted) return;
+
+      // Handle battery level safely
+      if (state.batteryLevel >= 0) {
+        setBatteryLevel(Math.round(state.batteryLevel * 100));
+      }
+
+      // FIX: include FULL state
+      setIsCharging(
+        state.batteryState === Battery.BatteryState.CHARGING ||
+          state.batteryState === Battery.BatteryState.FULL,
+      );
+    };
+
+    const init = async () => {
       try {
         const state = await Battery.getPowerStateAsync();
-        if (!isMounted) {
-          return;
-        }
-
-        setBatteryLevel(Math.round(state.batteryLevel * 100));
-        setIsCharging(state.batteryState === Battery.BatteryState.CHARGING);
+        updateState(state);
+      } catch (e) {
+        console.warn("Battery error:", e);
       } finally {
-        if (isMounted) {
-          setIsLoadingBattery(false);
-        }
+        if (isMounted) setIsLoadingBattery(false);
       }
     };
 
-    initBatteryState();
+    init();
 
-    const levelSub = Battery.addBatteryLevelListener(({ batteryLevel }) => {
-      setBatteryLevel(Math.round(batteryLevel * 100));
+    // 🔁 Battery level listener
+    const levelSub = Battery.addBatteryLevelListener((event) => {
+      if (event.batteryLevel >= 0) {
+        setBatteryLevel(Math.round(event.batteryLevel * 100));
+        console.log(
+          "Battery level updated:",
+          Math.round(event.batteryLevel * 100) + "%",
+        );
+      }
     });
 
-    const stateSub = Battery.addBatteryStateListener(({ batteryState }) => {
-      setIsCharging(batteryState === Battery.BatteryState.CHARGING);
+    // 🔁 Charging state listener
+    const stateSub = Battery.addBatteryStateListener((event) => {
+      setIsCharging(
+        event.batteryState === Battery.BatteryState.CHARGING ||
+          event.batteryState === Battery.BatteryState.FULL,
+      );
+      console.log(
+        "Battery state updated:",
+        event.batteryState === Battery.BatteryState.CHARGING
+          ? "Charging"
+          : event.batteryState === Battery.BatteryState.FULL
+            ? "Full"
+            : "Not Charging",
+      );
     });
 
     return () => {
       isMounted = false;
-      levelSub.remove();
-      stateSub.remove();
+      levelSub?.remove();
+      stateSub?.remove();
     };
   }, []);
 
