@@ -38,16 +38,16 @@ export default function TabsLayout() {
         options={{
           title: "Devices",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="devices-outline" size={size} color={color} />
+            <Ionicons name="laptop-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="profile"
         options={{
-          title: "Settings",
+          title: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="options-outline" size={size} color={color} />
+            <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
       />

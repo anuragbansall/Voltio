@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
-import * as Battery from "expo-battery";
-import { useEffect, useState } from "react";
 import AuthGate from "../../components/AuthGate.jsx";
 import DeviceInfoCard from "../../components/DeviceInfoCard";
+import { useBattery } from "../../context/BatteryContext";
+import { clearAuth } from "../../utils/authStorage.js";
 
 const devices = [
   {
@@ -30,45 +30,12 @@ const devices = [
   },
 ];
 
-const getBattery = async () => {
-  const level = await Battery.getBatteryLevelAsync();
-  const state = await Battery.getBatteryStateAsync();
-
-  return {
-    battery: Math.round(level * 100),
-    isCharging: state === Battery.BatteryState.CHARGING,
-  };
+const handleLogout = async () => {
+  await clearAuth();
 };
 
-export default function index() {
-  const [batteryLevel, setBatteryLevel] = useState(0);
-  const [isCharging, setIsCharging] = useState(false);
-
-  useEffect(() => {
-    const init = async () => {
-      const state = await Battery.getPowerStateAsync();
-
-      setBatteryLevel(Math.round(state.batteryLevel * 100));
-      setIsCharging(state.batteryState === Battery.BatteryState.CHARGING);
-    };
-
-    init();
-
-    // battery level listener
-    const levelSub = Battery.addBatteryLevelListener(({ batteryLevel }) => {
-      setBatteryLevel(Math.round(batteryLevel * 100));
-    });
-
-    // charging listener
-    const stateSub = Battery.addBatteryStateListener(({ batteryState }) => {
-      setIsCharging(batteryState === Battery.BatteryState.CHARGING);
-    });
-
-    return () => {
-      levelSub.remove();
-      stateSub.remove();
-    };
-  }, []);
+export default function Index() {
+  const { batteryLevel, isCharging, isLoadingBattery } = useBattery();
 
   return (
     <AuthGate>
@@ -81,15 +48,15 @@ export default function index() {
           </Text>
         </View>
 
-        <Pressable style={styles.actionButton}>
+        <Pressable style={styles.actionButton} onPress={handleLogout}>
           <Ionicons name="sparkles-outline" size={18} color="#071014" />
-          <Text style={styles.actionButtonText}>Refresh</Text>
+          <Text style={styles.actionButtonText}>Logout</Text>
         </Pressable>
       </View>
 
       <Text style={styles.subtitle}>
-        Current Battery Level: {batteryLevel}% Is Charging:{" "}
-        {isCharging ? "Yes" : "No"}
+        Current Battery Level: {isLoadingBattery ? "..." : `${batteryLevel}%`}{" "}
+        Is Charging: {isCharging ? "Yes" : "No"}
       </Text>
 
       <View style={styles.statsRow}>

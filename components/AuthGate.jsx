@@ -2,171 +2,200 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../context/AuthContext";
 
-const emptyForm = {
-  username: "",
-  email: "",
-  password: "",
-};
+const emptyForm = { username: "", email: "", password: "" };
 
 export default function AuthGate({ children }) {
+  const { user, isLoading, login, register } = useAuth();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(emptyForm);
   const [statusMessage, setStatusMessage] = useState(
     "Sign in or create an account to continue.",
   );
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
 
-  const isAuthenticated = true; // TODO: Replace with real authentication logic
+  const updateField = (field, value) =>
+    setForm((current) => ({ ...current, [field]: value }));
 
-  const updateField = (field, value) => {
-    setForm((currentForm) => ({
-      ...currentForm,
-      [field]: value,
-    }));
-  };
+  const resetForm = () => setForm(emptyForm);
 
-  const resetForm = () => {
-    setForm(emptyForm);
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setError(null);
     const username = form.username.trim();
     const email = form.email.trim().toLowerCase();
     const password = form.password;
 
-    if (mode === "register" && (!username || !email || !password)) {
-      setStatusMessage("Enter a username, email, and password.");
+    if (
+      (mode === "register" && (!username || !email || !password)) ||
+      (mode === "login" && (!email || !password))
+    ) {
+      setStatusMessage(
+        mode === "register"
+          ? "Enter a username, email, and password."
+          : "Enter your email and password.",
+      );
       return;
     }
 
-    if (mode === "login" && (!email || !password)) {
-      setStatusMessage("Enter your email and password.");
-      return;
-    }
+    try {
+      setIsProcessing(true);
+      setStatusMessage(
+        mode === "register" ? "Creating account..." : "Logging in...",
+      );
 
-    if (mode === "register") {
-      //TODO: In a real app, you'd make a request to your backend here.
-    }
+      if (mode === "register") await register({ username, email, password });
+      else await login({ email, password });
 
-    if (mode === "login") {
-      // TODO: In a real app, you'd make a request to your backend here.
+      setStatusMessage(mode === "login" ? "Logged in!" : "Account created!");
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message);
+      setStatusMessage("Something went wrong. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
-
-    setStatusMessage(
-      mode === "register"
-        ? "Account created! You can now log in."
-        : "Logged in successfully!",
-    );
-    resetForm();
   };
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.shell}>
+          <Text style={styles.description}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // If user is logged in, show children
+  if (user) {
+    return (
+      <SafeAreaView style={[styles.screen, { padding: 20 }]}>
+        {children}
+      </SafeAreaView>
+    );
+  }
+
+  // Otherwise, show login/register UI
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.backgroundGlow} />
       <View style={styles.backgroundGlowSecondary} />
       <View style={styles.shell}>
-        {!isAuthenticated ? (
-          <View style={styles.card}>
-            <View style={styles.heroRow}>
-              <View style={styles.heroBadge}>
-                <Ionicons name="flash-outline" size={20} color="#071014" />
-              </View>
-
-              <View style={styles.heroCopy}>
-                <Text style={styles.kicker}>Voltio access</Text>
-                <Text style={styles.title}>
-                  {mode === "register" ? "Create account" : "Welcome back"}
-                </Text>
-                <Text style={styles.heroSubtitle}>
-                  A clean, secure dashboard for tracking your devices.
-                </Text>
-              </View>
-
-              <View style={styles.segmentedControl}>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setMode("login")}
-                  style={[
-                    styles.segment,
-                    mode === "login" && styles.segmentActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.segmentLabel,
-                      mode === "login" && styles.segmentLabelActive,
-                    ]}
-                  >
-                    Login
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setMode("register")}
-                  style={[
-                    styles.segment,
-                    mode === "register" && styles.segmentActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.segmentLabel,
-                      mode === "register" && styles.segmentLabelActive,
-                    ]}
-                  >
-                    Register
-                  </Text>
-                </Pressable>
-              </View>
+        <View style={styles.card}>
+          <View style={styles.heroRow}>
+            <View style={styles.heroBadge}>
+              <Ionicons name="flash-outline" size={20} color="#071014" />
             </View>
 
-            <Text style={styles.description}>{statusMessage}</Text>
+            <View style={styles.heroCopy}>
+              <Text style={styles.kicker}>Voltio access</Text>
+              <Text style={styles.title}>
+                {mode === "register" ? "Create account" : "Welcome back"}
+              </Text>
+              <Text style={styles.heroSubtitle}>
+                A clean, secure dashboard for tracking your devices.
+              </Text>
+            </View>
 
-            <View style={styles.form}>
-              {mode === "register" ? (
-                <TextInput
-                  autoCapitalize="none"
-                  placeholder="Username"
-                  placeholderTextColor="#6E737C"
-                  style={styles.input}
-                  value={form.username}
-                  onChangeText={(value) => updateField("username", value)}
-                />
-              ) : null}
+            <View style={styles.segmentedControl}>
+              <Pressable
+                onPress={() => setMode("login")}
+                style={[
+                  styles.segment,
+                  mode === "login" && styles.segmentActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.segmentLabel,
+                    mode === "login" && styles.segmentLabelActive,
+                  ]}
+                >
+                  Login
+                </Text>
+              </Pressable>
 
-              <TextInput
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                placeholder="Email"
-                placeholderTextColor="#6E737C"
-                style={styles.input}
-                value={form.email}
-                onChangeText={(value) => updateField("email", value)}
-              />
-
-              <TextInput
-                autoCapitalize="none"
-                autoComplete="password"
-                placeholder="Password"
-                placeholderTextColor="#6E737C"
-                secureTextEntry
-                style={styles.input}
-                value={form.password}
-                onChangeText={(value) => updateField("password", value)}
-              />
-
-              <Pressable onPress={handleSubmit} style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>
-                  {mode === "register" ? "Create account" : "Log in"}
+              <Pressable
+                onPress={() => setMode("register")}
+                style={[
+                  styles.segment,
+                  mode === "register" && styles.segmentActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.segmentLabel,
+                    mode === "register" && styles.segmentLabelActive,
+                  ]}
+                >
+                  Register
                 </Text>
               </Pressable>
             </View>
           </View>
-        ) : (
-          <View style={styles.content}>{children}</View>
-        )}
+
+          <Text style={styles.description}>{statusMessage}</Text>
+
+          <View style={styles.form}>
+            {mode === "register" && (
+              <TextInput
+                autoCapitalize="none"
+                placeholder="Username"
+                placeholderTextColor="#6E737C"
+                style={styles.input}
+                value={form.username}
+                onChangeText={(v) => updateField("username", v)}
+              />
+            )}
+
+            <TextInput
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              placeholder="Email"
+              placeholderTextColor="#6E737C"
+              style={styles.input}
+              value={form.email}
+              onChangeText={(v) => updateField("email", v)}
+            />
+
+            <TextInput
+              autoCapitalize="none"
+              autoComplete="password"
+              placeholder="Password"
+              placeholderTextColor="#6E737C"
+              secureTextEntry
+              style={styles.input}
+              value={form.password}
+              onChangeText={(v) => updateField("password", v)}
+            />
+
+            <Pressable
+              onPress={handleSubmit}
+              style={styles.primaryButton}
+              disabled={isProcessing}
+            >
+              <Text style={styles.primaryButtonText}>
+                {mode === "register"
+                  ? isProcessing
+                    ? "Creating account..."
+                    : "Create account"
+                  : isProcessing
+                    ? "Logging in..."
+                    : "Log in"}
+              </Text>
+            </Pressable>
+
+            {error && (
+              <Text style={[styles.description, { color: "#FF6B6B" }]}>
+                {error}
+              </Text>
+            )}
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );

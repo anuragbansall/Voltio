@@ -2,45 +2,51 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function Settings() {
+import { useAuth } from "../../context/AuthContext";
+
+export default function Profile() {
+  const { user } = useAuth();
+
+  console.log("User data:", user); // Debugging line to check user data
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.hero}>
-        <Text style={styles.kicker}>Control center</Text>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.kicker}>Account center</Text>
+        <Text style={styles.title}>Profile</Text>
         <Text style={styles.subtitle}>
-          Fine-tune your app preferences, account, and device behavior.
+          View your account details and keep your profile information in sync.
         </Text>
       </View>
 
       <View style={styles.card}>
-        <SettingRow
-          icon="moon-outline"
-          title="Appearance"
-          detail="Dark theme active"
+        <ProfileRow
+          icon="person-outline"
+          title="Username"
+          detail={user?.username || "Not available"}
         />
-        <SettingRow
-          icon="notifications-outline"
-          title="Notifications"
-          detail="Device alerts enabled"
+        <ProfileRow
+          icon="mail-outline"
+          title="Email"
+          detail={user?.email || "Not available"}
         />
-        <SettingRow
-          icon="shield-checkmark-outline"
-          title="Security"
-          detail="Authentication ready"
+        <ProfileRow
+          icon="finger-print-outline"
+          title="User ID"
+          detail={user?._id || "Not available"}
           last
         />
       </View>
 
       <Pressable style={styles.primaryButton}>
-        <Ionicons name="person-circle-outline" size={18} color="#071014" />
-        <Text style={styles.primaryButtonText}>Manage account</Text>
+        <Ionicons name="create-outline" size={18} color="#071014" />
+        <Text style={styles.primaryButtonText}>Edit profile</Text>
       </Pressable>
     </SafeAreaView>
   );
 }
 
-function SettingRow({ icon, title, detail, last = false }) {
+function ProfileRow({ icon, title, detail, last = false }) {
   return (
     <View style={[styles.row, last && styles.rowLast]}>
       <View style={styles.rowIconWrap}>
