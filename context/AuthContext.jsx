@@ -6,6 +6,7 @@ import {
   saveAuth,
   subscribeAuth,
 } from "../utils/authStorage";
+import { clearDevice } from "../utils/deviceStorage";
 
 const AuthContext = createContext();
 
@@ -69,6 +70,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     delete api.defaults.headers.common["Authorization"];
     await clearAuth();
+    await clearDevice();
   };
 
   return (

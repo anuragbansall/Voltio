@@ -1,7 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useAuth } from "../../context/AuthContext";
 
 export default function TabsLayout() {
+  const { user, isLoading } = useAuth();
+  const showTabBar = Boolean(user) && !isLoading;
+
   return (
     <Tabs
       screenOptions={{
@@ -15,6 +19,7 @@ export default function TabsLayout() {
           paddingHorizontal: 12,
           position: "absolute",
           elevation: 0,
+          display: showTabBar ? "flex" : "none",
         },
         tabBarActiveTintColor: "#7EF0D6",
         tabBarInactiveTintColor: "#6E7681",
@@ -39,6 +44,15 @@ export default function TabsLayout() {
           title: "Devices",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="laptop-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="add-device"
+        options={{
+          title: "Add Device",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={size} color={color} />
           ),
         }}
       />
