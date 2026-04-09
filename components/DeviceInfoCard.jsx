@@ -1,12 +1,49 @@
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
-import DeviceImage from "./DeviceImage";
 import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useDevice } from "../context/DeviceContext";
+import DeviceImage from "./DeviceImage";
+
+function timeAgo(date) {
+  const seconds = Math.floor((new Date() - date) / 1000);
+
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    day: 86400,
+    hour: 3600,
+    minute: 60,
+  };
+
+  for (let key in intervals) {
+    const interval = Math.floor(seconds / intervals[key]);
+    if (interval > 0) {
+      return `${interval} ${key}${interval > 1 ? "s" : ""} ago`;
+    }
+  }
+  return "just now";
+}
 
 export default function DeviceInfoCard({ device }) {
+  const { deviceId } = useDevice();
+
+  const lastActiveDate = new Date(device.lastActive);
+
   return (
-    <TouchableOpacity style={style.card}>
+    <TouchableOpacity
+      style={[
+        style.card,
+        device._id === deviceId && {
+          borderColor: "#7ef0d57e",
+          backgroundColor: "rgba(126,240,214,0.08)",
+        },
+      ]}
+    >
       <View style={style.imageWrap}>
-        <DeviceImage type={device.type} isCharging={true} size={76} />
+        <DeviceImage
+          type={device.type.toLowerCase()}
+          isCharging={true}
+          size={76}
+        />
       </View>
 
       <View style={style.copy}>
@@ -28,12 +65,10 @@ export default function DeviceInfoCard({ device }) {
         )}
 
         <Text style={style.lastSeen}>
-          Last seen {" "}
-          {new Date(parseInt(device.lastSeen)).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
+          Last seen{" "}
+          {isNaN(lastActiveDate.getTime())
+            ? "unknown"
+            : timeAgo(lastActiveDate)}
         </Text>
       </View>
     </TouchableOpacity>

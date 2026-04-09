@@ -1,44 +1,101 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import AuthGate from "../../components/AuthGate.jsx";
 import DeviceInfoCard from "../../components/DeviceInfoCard";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { useBattery } from "../../context/BatteryContext";
-import { clearAuth } from "../../utils/authStorage.js";
-
-const devices = [
-  {
-    type: "laptop",
-    name: "Macbook Pro",
-    isCharging: true,
-    lastSeen: "1775599085641",
-    batteryLevel: 50,
-  },
-  {
-    type: "phone",
-    name: "IPhone 15 Pro",
-    isCharging: true,
-    lastSeen: "1775599085641",
-    batteryLevel: 80,
-  },
-  {
-    type: "tablet",
-    name: "Samsung Tab",
-    isCharging: false,
-    lastSeen: "1775599085641",
-    batteryLevel: 20,
-  },
-];
-
-const handleLogout = async () => {
-  await clearAuth();
-};
+import { connectSocket, getSocket } from "../../services/socket.js";
+import { api } from "../../utils/api.js";
 
 export default function Index() {
-  const { batteryLevel, isCharging, isLoadingBattery } = useBattery();
+  const { isLoadingBattery } = useBattery();
+  const { user, token, logout, isLoading } = useAuth();
+
+  const [deviceList, setDeviceList] = useState([]);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (isLoading || !user || !token) {
+      setDeviceList([]);
+      setError(null);
+      setIsLoadingDevices(false);
+      return;
+    }
+
+    const fetchDevices = async () => {
+      setIsLoadingDevices(true);
+      try {
+        const response = await api.get("/devices");
+        setDeviceList(response.data);
+      } catch (error) {
+        console.error("Error fetching devices:", error?.message || error);
+        setError("Failed to load devices. Please try again.");
+      } finally {
+        setIsLoadingDevices(false);
+      }
+    };
+
+    fetchDevices();
+  }, [isLoading, token, user]);
+
+  // {"__v": 0, "_id": "69d81f7437f8bed13faa5810", "batteryLevel": 51, "isCharging": false, "lastActive": "2026-04-09T22:31:30.701Z", "name": "Anurag lal", "type": "laptop", "userId": "69d6d0af84f351c7fae785f4"}
+
+  // 🔌 Setup socket + listeners
+  useEffect(() => {
+    if (isLoading || !user || !token) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    let socket;
+
+    const setupSocket = async () => {
+      socket = (await connectSocket()) || getSocket();
+
+      if (!isMounted || !socket) return;
+
+      socket.on("device-update", (data) => {
+        console.log("Device update received:", data);
+
+        setDeviceList((prevList) =>
+          prevList.map((device) =>
+            device._id === data.deviceId ? { ...device, ...data } : device,
+          ),
+        );
+      });
+    };
+
+    setupSocket();
+
+    return () => {
+      isMounted = false;
+      socket?.off("device-update");
+    };
+  }, [isLoading, token, user]);
+
+  // 📊 Derived stats
+  const onlineDevices = deviceList?.length;
+  const chargingDevices = deviceList?.filter((d) => d.isCharging).length;
+
+  // 🔓 Logout handler
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  if (isLoading || isLoadingBattery || isLoadingDevices) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.title}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <AuthGate>
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.kicker}>Connected fleet</Text>
@@ -54,26 +111,26 @@ export default function Index() {
         </Pressable>
       </View>
 
-      <Text style={styles.subtitle}>
-        Current Battery Level: {isLoadingBattery ? "..." : `${batteryLevel}%`}{" "}
-        Is Charging: {isCharging ? "Yes" : "No"}
-      </Text>
-
+      {/* Stats */}
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>3</Text>
+          <Text style={styles.statValue}>{onlineDevices}</Text>
           <Text style={styles.statLabel}>Devices online</Text>
         </View>
+
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>2</Text>
+          <Text style={styles.statValue}>{chargingDevices}</Text>
           <Text style={styles.statLabel}>Charging now</Text>
         </View>
       </View>
 
+      {/* Device List */}
       <FlatList
-        data={devices}
+        data={deviceList}
         renderItem={({ item }) => <DeviceInfoCard device={item} />}
-        keyExtractor={(item) => item.name}
+        keyExtractor={(item, index) =>
+          item?._id || item?.id || `${item?.name || "device"}-${index}`
+        }
         style={styles.devicesList}
         contentContainerStyle={styles.devicesListContent}
         showsVerticalScrollIndicator={false}
@@ -83,6 +140,12 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#11141A",
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -111,6 +174,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     maxWidth: 320,
+    marginTop: 10,
   },
   actionButton: {
     flexDirection: "row",

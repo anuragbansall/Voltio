@@ -7,8 +7,8 @@ import { DeviceProvider } from "../context/DeviceContext";
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <BatteryProvider>
-        <DeviceProvider>
+      <DeviceProvider>
+        <BatteryProvider>
           <StatusBar style="light" translucent />
           <Stack
             screenOptions={{
@@ -16,8 +16,8 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: "#05070A" },
             }}
           />
-        </DeviceProvider>
-      </BatteryProvider>
+        </BatteryProvider>
+      </DeviceProvider>
     </AuthProvider>
   );
 }

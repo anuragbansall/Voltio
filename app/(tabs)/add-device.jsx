@@ -107,7 +107,20 @@ export default function AddDevice() {
 
   const handleForgetDevice = async () => {
     setError(null);
-    await clearDevice();
+
+    try {
+      if (deviceId) {
+        await api.delete(`/devices/${deviceId}`);
+      }
+      await clearDevice();
+    } catch (requestError) {
+      console.error("Error deleting device:", requestError);
+      setError(
+        requestError?.response?.data?.message ||
+          requestError.message ||
+          "Failed to delete device from server.",
+      );
+    }
   };
 
   const renderViewDevice = () => (
@@ -122,8 +135,12 @@ export default function AddDevice() {
         </View>
 
         <View style={styles.deviceCopy}>
-          <Text style={styles.deviceName}>{device?.name || "Saved Device"}</Text>
-          <Text style={styles.deviceType}>{device?.type || "Unknown type"}</Text>
+          <Text style={styles.deviceName}>
+            {device?.name || "Saved Device"}
+          </Text>
+          <Text style={styles.deviceType}>
+            {device?.type || "Unknown type"}
+          </Text>
         </View>
       </View>
 
@@ -157,7 +174,10 @@ export default function AddDevice() {
       </View>
 
       <Text style={styles.lastSeen}>
-        Last seen {formatLastSeen(device?.lastSeen || device?.updatedAt || device?.createdAt)}
+        Last seen{" "}
+        {formatLastSeen(
+          device?.lastSeen || device?.updatedAt || device?.createdAt,
+        )}
       </Text>
 
       <View style={styles.actionsRow}>
@@ -187,7 +207,9 @@ export default function AddDevice() {
         >
           <View style={styles.hero}>
             <Text style={styles.kicker}>Device setup</Text>
-            <Text style={styles.title}>{hasDevice ? "View Device" : "Add Device"}</Text>
+            <Text style={styles.title}>
+              {hasDevice ? "View Device" : "Add Device"}
+            </Text>
             <Text style={styles.subtitle}>
               {hasDevice
                 ? "A device is already linked on this phone."
@@ -227,7 +249,10 @@ export default function AddDevice() {
               </View>
 
               <Pressable
-                style={[styles.primaryButton, isSubmitting && styles.primaryButtonDisabled]}
+                style={[
+                  styles.primaryButton,
+                  isSubmitting && styles.primaryButtonDisabled,
+                ]}
                 onPress={handleAddDevice}
                 disabled={isSubmitting}
               >

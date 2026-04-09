@@ -7,8 +7,6 @@ import { useAuth } from "../../context/AuthContext";
 export default function Profile() {
   const { user } = useAuth();
 
-  console.log("User data:", user); // Debugging line to check user data
-
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.hero}>
