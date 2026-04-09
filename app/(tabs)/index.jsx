@@ -17,6 +17,19 @@ export default function Index() {
   const [isLoadingDevices, setIsLoadingDevices] = useState(true);
   const [error, setError] = useState(null);
 
+  const fetchDevices = async () => {
+    setIsLoadingDevices(true);
+    try {
+      const response = await api.get("/devices");
+      setDeviceList(response.data);
+    } catch (error) {
+      console.error("Error fetching devices:", error?.message || error);
+      setError("Failed to load devices. Please try again.");
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  };
+
   useEffect(() => {
     if (isLoading || !user || !token) {
       setDeviceList([]);
@@ -24,19 +37,6 @@ export default function Index() {
       setIsLoadingDevices(false);
       return;
     }
-
-    const fetchDevices = async () => {
-      setIsLoadingDevices(true);
-      try {
-        const response = await api.get("/devices");
-        setDeviceList(response.data);
-      } catch (error) {
-        console.error("Error fetching devices:", error?.message || error);
-        setError("Failed to load devices. Please try again.");
-      } finally {
-        setIsLoadingDevices(false);
-      }
-    };
 
     fetchDevices();
   }, [isLoading, token, user]);
@@ -80,11 +80,6 @@ export default function Index() {
   const onlineDevices = deviceList?.length;
   const chargingDevices = deviceList?.filter((d) => d.isCharging).length;
 
-  // 🔓 Logout handler
-  const handleLogout = async () => {
-    await logout();
-  };
-
   if (isLoading || isLoadingBattery || isLoadingDevices) {
     return (
       <View style={styles.loadingContainer}>
@@ -105,9 +100,9 @@ export default function Index() {
           </Text>
         </View>
 
-        <Pressable style={styles.actionButton} onPress={handleLogout}>
+        <Pressable style={styles.actionButton} onPress={fetchDevices}>
           <Ionicons name="sparkles-outline" size={18} color="#071014" />
-          <Text style={styles.actionButtonText}>Logout</Text>
+          <Text style={styles.actionButtonText}>Refresh</Text>
         </Pressable>
       </View>
 

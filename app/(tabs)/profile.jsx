@@ -5,7 +5,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, token, logout, isLoading } = useAuth();
+
+  // 🔓 Logout handler
+  const handleLogout = async () => {
+    await logout();
+  };
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -39,6 +44,11 @@ export default function Profile() {
       <Pressable style={styles.primaryButton}>
         <Ionicons name="create-outline" size={18} color="#071014" />
         <Text style={styles.primaryButtonText}>Edit profile</Text>
+      </Pressable>
+
+      <Pressable style={styles.primaryButton} onPress={handleLogout}>
+        <Ionicons name="exit-outline" size={18} color="#071014" />
+        <Text style={styles.actionButtonText}>Logout</Text>
       </Pressable>
     </SafeAreaView>
   );
