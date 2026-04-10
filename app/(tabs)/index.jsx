@@ -55,10 +55,23 @@ export default function Index() {
     const setupSocket = async () => {
       socket = (await connectSocket()) || getSocket();
 
-      if (!isMounted || !socket) return;
+      console.log("Socket connection established:", socket?.connected);
+
+      if (!isMounted) {
+        console.error(
+          "Component unmounted before socket connection was established",
+        );
+        return;
+      }
+
+      if (!socket) {
+        console.error("Failed to establish socket connection");
+        return;
+      }
 
       socket.on("device-update", (data) => {
-        console.log("Device update received:", data);
+        console.log("--- Device update received:", data);
+        console.log("--- Current device list:", deviceList);
 
         setDeviceList((prevList) =>
           prevList.map((device) =>
@@ -74,7 +87,7 @@ export default function Index() {
       isMounted = false;
       socket?.off("device-update");
     };
-  }, [isLoading, token, user]);
+  }, [isLoading, token, user, deviceList]);
 
   // 📊 Derived stats
   const onlineDevices = deviceList?.length;
